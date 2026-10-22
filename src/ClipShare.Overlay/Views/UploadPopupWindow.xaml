@@ -1,0 +1,265 @@
+<Window x:Class="ClipShare.Overlay.Views.UploadPopupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ClipShare"
+        Width="440" Height="236"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="Manual"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Deactivated="OnDeactivated"
+        AllowDrop="True"
+        DragEnter="OnDragEnter"
+        DragOver="OnDragEnter"
+        DragLeave="OnDragLeave"
+        Drop="OnDrop">
+    <Window.Resources>
+        <!-- Deep, muted navy/royal blue — darker and less saturated than Discord's
+             bright Blurple (#5865F2), and the surfaces are blue-tinted rather than
+             Discord's neutral warm greys, so it reads as a distinct-but-related palette. -->
+        <SolidColorBrush x:Key="SurfaceBrush" Color="#12141F" />
+        <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#1B1F30" />
+        <SolidColorBrush x:Key="BorderSubtleBrush" Color="#262B3F" />
+        <SolidColorBrush x:Key="AccentBrush" Color="#2A46B8" />
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#3B5AD9" />
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#EDEFF7" />
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#8890A8" />
+
+        <Style x:Key="AccentButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="7"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource AccentHoverBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ThinProgressBarStyle" TargetType="ProgressBar">
+            <Setter Property="Height" Value="4" />
+            <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Border CornerRadius="2" Background="{TemplateBinding Background}">
+                            <Grid ClipToBounds="True">
+                                <Border x:Name="PART_Indicator" CornerRadius="2"
+                                        Background="{TemplateBinding Foreground}"
+                                        HorizontalAlignment="Left" />
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="IconButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
+                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- WPF's default ComboBox chrome ignores plain Background/Foreground setters — its
+             ControlTemplate (both the closed box and the dropdown Popup) is baked into the
+             OS theme, which is why a bare Style like the one this replaced rendered as an
+             unstyled white box with white text: the setters were simply never consulted.
+             Theming it for real requires overriding the ControlTemplate itself. -->
+        <Style x:Key="ServerComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="Padding" Value="10,7" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="ItemBorder" Background="Transparent" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource AccentHoverBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ServerComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="ItemContainerStyle" Value="{StaticResource ServerComboBoxItemStyle}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="Box"
+                                    Background="{StaticResource SurfaceRaisedBrush}"
+                                    BorderBrush="{StaticResource BorderSubtleBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="7">
+                                <Grid Margin="{TemplateBinding Padding}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <!-- SelectionBoxItem/SelectionBoxItemTemplate (the usual TemplateBinding pair
+                                         for this) are documented by Microsoft as internal plumbing "not intended
+                                         for use... in Styling code," and in practice didn't refresh here — likely
+                                         because ItemsSource is reassigned to a brand-new List<DiscordServerEntry>
+                                         on every LoadServerList() call. A plain Binding on SelectedItem.Name (not
+                                         a TemplateBinding) reacts to the ComboBox's SelectedItem DP directly. -->
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding SelectedItem.Name, RelativeSource={RelativeSource TemplatedParent}, FallbackValue='No server selected'}"
+                                               Foreground="{StaticResource TextPrimaryBrush}"
+                                               VerticalAlignment="Center"
+                                               IsHitTestVisible="False" />
+                                    <Path Grid.Column="1" Data="M0,0 L4,4 L8,0" Stroke="{StaticResource TextSecondaryBrush}"
+                                          StrokeThickness="1.4" VerticalAlignment="Center" Margin="8,0,2,0" />
+                                </Grid>
+                            </Border>
+
+                            <ToggleButton x:Name="ToggleButton" Background="Transparent" BorderThickness="0"
+                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          Focusable="False" ClickMode="Press">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Rectangle Fill="Transparent" />
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+
+                            <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True" Focusable="False" PopupAnimation="Fade"
+                                   MinWidth="{TemplateBinding ActualWidth}">
+                                <Border Background="{StaticResource SurfaceRaisedBrush}"
+                                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                                        BorderThickness="1" CornerRadius="7" Margin="0,4,0,0">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="270" Color="Black" Opacity="0.4" />
+                                    </Border.Effect>
+                                    <ScrollViewer Margin="4" MaxHeight="200" SnapsToDevicePixels="True">
+                                        <ItemsPresenter />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Box" Property="Background" Value="{StaticResource SurfaceBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border x:Name="RootBorder"
+            Background="{StaticResource SurfaceBrush}"
+            CornerRadius="14"
+            BorderBrush="{StaticResource BorderSubtleBrush}"
+            BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28" ShadowDepth="8" Direction="270" Color="Black" Opacity="0.5" />
+        </Border.Effect>
+
+        <Grid Margin="20,16,20,18">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Header / drag handle -->
+            <Grid Grid.Row="0" Margin="0,0,0,16" MouseLeftButtonDown="OnHeaderMouseDown" Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Ellipse Grid.Column="0" Width="9" Height="9" Fill="{StaticResource AccentBrush}"
+                         VerticalAlignment="Center" Margin="0,0,9,0" />
+                <TextBlock Grid.Column="1" Text="ClipShare" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                <Button Grid.Column="2" Content="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                        Style="{StaticResource IconButtonStyle}" Click="OnCloseClick" />
+            </Grid>
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal">
+                <Button x:Name="BrowseButton" Content="Browse…" Style="{StaticResource AccentButtonStyle}" Click="OnBrowseClick" />
+                <Border Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="7" Padding="12,8" Margin="10,0,0,0" MaxWidth="220">
+                    <TextBlock x:Name="SelectedFileText" Text="No file selected" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                </Border>
+            </StackPanel>
+
+            <Grid Grid.Row="2" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <ComboBox x:Name="ServerComboBox" Grid.Column="0" Style="{StaticResource ServerComboBoxStyle}"
+                          DisplayMemberPath="Name" SelectionChanged="OnServerSelectionChanged" />
+                <Button x:Name="AddServerButton" Grid.Column="1" Content="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                        Style="{StaticResource IconButtonStyle}" Margin="8,0,0,0"
+                        ToolTip="Add a Discord server" Click="OnAddServerClick" />
+            </Grid>
+
+            <StackPanel Grid.Row="3" VerticalAlignment="Bottom">
+                <ProgressBar x:Name="UploadProgressBar" Style="{StaticResource ThinProgressBarStyle}"
+                             Minimum="0" Maximum="1" Value="0" Margin="0,0,0,8" Visibility="Collapsed" />
+                <TextBlock x:Name="StatusText" Text="Select a clip to upload."
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

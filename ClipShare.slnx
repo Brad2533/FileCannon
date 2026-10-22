@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ClipShare.Overlay/ClipShare.Overlay.csproj" />
+    <Project Path="src/ClipShare.PiServer/ClipShare.PiServer.csproj" />
+    <Project Path="src/ClipShare.Shared/ClipShare.Shared.csproj" />
+  </Folder>
+</Solution>

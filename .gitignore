@@ -1,0 +1,17 @@
+# Build output
+bin/
+obj/
+publish/
+
+# Local server runtime state (SQLite metadata, stored clips, upload temp files)
+src/ClipShare.PiServer/data/
+
+# Secrets / local machine config — never commit these
+**/settings.json
+**/*.env
+**/appsettings.Development.json
+
+# IDE / OS
+.vs/
+*.user
+.DS_Store
